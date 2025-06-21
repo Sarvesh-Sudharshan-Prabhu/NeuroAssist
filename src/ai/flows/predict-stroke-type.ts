@@ -54,7 +54,7 @@ const prompt = ai.definePrompt({
   input: {schema: PredictStrokeTypeInputSchema},
   output: {schema: PredictStrokeTypeOutputSchema},
   prompt: `You are an expert radiologist and emergency physician specializing in stroke diagnosis.
-Analyze the provided CT scan image and patient symptoms to determine the stroke type, tPA eligibility, and the recommended course of action.
+Analyze the provided CT scan image and patient symptoms to determine the stroke type, tPA eligibility, and the recommended course of action. Follow these steps:
 
 **1. CT Scan Analysis:**
 Examine the CT scan image provided. Classify it as 'Ischemic', 'Hemorrhagic', or 'Uncertain'.
@@ -68,7 +68,13 @@ Correlate the image findings with the patient's symptoms and history.
 - High blood pressure is a risk factor for both, but a contraindication for tPA if excessively high and a key indicator for hemorrhage.
 - Facial droop, slurred speech, and arm weakness confirm stroke-like symptoms.
 
-**3. Determine tPA Eligibility and Action:**
+**3. Confidence Score Calculation:**
+Based on the clarity of the CT scan and the correlation with symptoms, calculate a confidence score for your diagnosis between 0.0 and 1.0.
+- **High Confidence (0.8 - 1.0):** The CT scan shows a clear, unambiguous sign of either an ischemic or hemorrhagic stroke that strongly correlates with the symptoms.
+- **Medium Confidence (0.5 - 0.79):** The CT scan shows suggestive but not definitive signs, or there's a mild discrepancy between the scan and symptoms.
+- **Low Confidence (< 0.5):** The CT scan is of poor quality, shows no clear signs, is ambiguous (leading to an 'Uncertain' type), or the findings strongly contradict the clinical symptoms.
+
+**4. Determine tPA Eligibility and Action:**
 - A patient is **tPA eligible** if:
   - Stroke type is confidently identified as **Ischemic**.
   - Time since onset is **less than 270 minutes**.
@@ -76,7 +82,7 @@ Correlate the image findings with the patient's symptoms and history.
 - A patient is **NOT tPA eligible** if:
   - Stroke type is **Hemorrhagic**.
   - Stroke type is **Uncertain**.
-  - Time since onset is **greater than 270 minutes**.
+  - Time since onset is **greater than or equal to 270 minutes**.
 
 **Patient Information:**
 CT Scan: {{media url=ctScanImage}}
@@ -90,7 +96,7 @@ History of diabetes: {{historyDiabetes}}
 History of smoking: {{historySmoking}}
 
 **Task:**
-Based on all the information, provide a JSON response with the determined stroke type, your confidence in this diagnosis, whether the patient is tPA eligible, and a clear, concise recommended action.
+Based on all the information and your analysis, provide a JSON response with the determined stroke type, your calculated confidence score, whether the patient is tPA eligible, and a clear, concise recommended action.
 For the action, be specific. For example: "Administer tPA under supervision, transfer to CT-capable hospital" or "Urgent neurosurgical consult required due to hemorrhage. Do not administer tPA."
 `,
 });
