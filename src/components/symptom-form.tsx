@@ -41,7 +41,7 @@ export function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
       faceDroop: false,
       speechSlurred: false,
       armWeakness: 'None',
-      bloodPressure: undefined,
+      bloodPressure: '',
       historyHypertension: false,
       historyDiabetes: false,
       historySmoking: false,
@@ -103,7 +103,7 @@ export function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
                     <FormItem>
                       <FormLabel>Systolic Blood Pressure (optional)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="e.g., 150" {...field} onChange={e => field.onChange(e.target.valueAsNumber)} />
+                        <Input type="number" placeholder="e.g., 150" {...field} onChange={e => field.onChange(e.target.value)} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
