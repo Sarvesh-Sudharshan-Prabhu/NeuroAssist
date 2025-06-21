@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 interface ResultsDisplayProps {
   result: PredictionResult & { uploadedImage: string };
@@ -111,6 +112,7 @@ const TpaDosingCalculator = () => {
 export function ResultsDisplay({ result, onReset }: ResultsDisplayProps) {
   const { toast } = useToast();
   const confidencePercent = Math.round(result.confidence * 100);
+  const isHemorrhagic = result.strokeType === 'Hemorrhagic';
 
   const getResultText = () => {
     return `NeuroAssist Stroke Diagnosis Summary:\n
@@ -164,7 +166,10 @@ export function ResultsDisplay({ result, onReset }: ResultsDisplayProps) {
              />
           </div>
 
-          <div className="bg-accent/20 p-4 rounded-lg border border-accent/30 space-y-2">
+          <div className={cn(
+             "p-4 rounded-lg border space-y-2",
+             isHemorrhagic ? "bg-destructive/10 border-destructive/30" : "bg-accent/20 border-accent/30"
+          )}>
              <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-muted-foreground">Recommended Action</p>
                 {result.tpaEligible ? (
@@ -175,11 +180,11 @@ export function ResultsDisplay({ result, onReset }: ResultsDisplayProps) {
                 ) : (
                     <Badge variant="destructive">
                         <XCircle className="mr-2 h-4 w-4" />
-                        tPA Not Eligible
+                        {isHemorrhagic ? 'tPA Contraindicated' : 'tPA Not Eligible'}
                     </Badge>
                 )}
              </div>
-             <p className="text-lg font-semibold text-foreground">{result.action}</p>
+             <p className="text-lg font-semibold text-foreground whitespace-pre-wrap">{result.action}</p>
           </div>
           
           <Separator />

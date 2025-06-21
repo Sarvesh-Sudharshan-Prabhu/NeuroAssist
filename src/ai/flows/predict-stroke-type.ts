@@ -74,7 +74,7 @@ Based on the clarity of the CT scan and the correlation with symptoms, calculate
 - **Medium Confidence (0.5 - 0.79):** The CT scan shows suggestive but not definitive signs, or there's a mild discrepancy between the scan and symptoms.
 - **Low Confidence (< 0.5):** The CT scan is of poor quality, shows no clear signs, is ambiguous (leading to an 'Uncertain' type), or the findings strongly contradict the clinical symptoms.
 
-**4. Determine tPA Eligibility and Action:**
+**4. Determine tPA Eligibility:**
 - A patient is **tPA eligible** if:
   - Stroke type is confidently identified as **Ischemic**.
   - Time since onset is **less than 270 minutes**.
@@ -95,9 +95,24 @@ History of hypertension: {{historyHypertension}}
 History of diabetes: {{historyDiabetes}}
 History of smoking: {{historySmoking}}
 
-**Task:**
-Based on all the information and your analysis, provide a JSON response with the determined stroke type, your calculated confidence score, whether the patient is tPA eligible, and a clear, concise recommended action.
-For the action, be specific. For example: "Administer tPA under supervision, transfer to CT-capable hospital" or "Urgent neurosurgical consult required due to hemorrhage. Do not administer tPA."
+**Task & Action Formulation:**
+Based on all the information, provide a JSON response with the determined stroke type, confidence, tPA eligibility, and recommended action. Formulate the 'action' field as follows:
+
+- **If Stroke Type is Hemorrhagic:** The action must be a multi-line string containing this exact protocol:
+"❌ HEMORRHAGIC STROKE DETECTED – tPA CONTRAINDICATED
+Urgent neurosurgical consultation required.
+
+Stabilization Protocol:
+- Stabilize Blood Pressure: Check BP immediately. If SBP > 180 mmHg, administer antihypertensives to lower it gradually.
+- Elevate Head: Keep patient's head elevated to 30 degrees to reduce intracranial pressure.
+- Minimize Stimulation: Reduce light, sound, and movement.
+- Control Fever: Apply cool packs if the patient is feverish to reduce brain metabolism."
+
+- **If Stroke Type is Ischemic and tPA eligible:** Provide a concise action, for example: "Administer tPA under supervision per protocol. Transfer to a stroke-ready hospital immediately."
+
+- **If Stroke Type is Ischemic and NOT tPA eligible:** Provide a concise action, for example: "Patient not eligible for tPA. Provide supportive care and seek urgent neurological consultation. Monitor vitals."
+
+- **If Stroke Type is Uncertain:** Provide a cautious action, for example: "Diagnosis uncertain. Do not administer tPA. Urgent neurological consultation and further imaging (e.g., MRI) recommended. Monitor vitals closely."
 `,
 });
 
