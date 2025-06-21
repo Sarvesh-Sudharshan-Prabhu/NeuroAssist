@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Stethoscope, BarChart3, CheckCircle2, XCircle, Printer, Share2, RefreshCw } from 'lucide-react';
+import { Stethoscope, BarChart3, CheckCircle2, XCircle, Share2, RefreshCw } from 'lucide-react';
 import type { PredictionResult } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,10 +37,6 @@ export function ResultsDisplay({ result, onReset }: ResultsDisplayProps) {
 - Recommended Action: ${result.action}`;
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   const handleShare = async () => {
     const shareData = {
       title: 'NeuroAssist Stroke Diagnosis',
@@ -69,10 +65,7 @@ export function ResultsDisplay({ result, onReset }: ResultsDisplayProps) {
 
   return (
     <>
-      <div className="print-only fixed top-0 left-0 w-full p-8 bg-white">
-        <h1 className="text-2xl font-bold mb-4">NeuroAssist - Diagnosis Report</h1>
-      </div>
-      <Card className="printable-area w-full">
+      <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Diagnosis Results</CardTitle>
           <CardDescription>AI-powered diagnosis based on CT scan and patient data.</CardDescription>
@@ -114,11 +107,7 @@ export function ResultsDisplay({ result, onReset }: ResultsDisplayProps) {
           </div>
 
         </CardContent>
-        <CardFooter className="flex flex-col sm:flex-row gap-2 no-print">
-          <Button onClick={handlePrint} variant="outline" className="w-full sm:w-auto">
-            <Printer className="mr-2 h-4 w-4" />
-            Print Report
-          </Button>
+        <CardFooter className="flex flex-col sm:flex-row gap-2">
           <Button onClick={handleShare} variant="outline" className="w-full sm:w-auto">
             <Share2 className="mr-2 h-4 w-4" />
             Share

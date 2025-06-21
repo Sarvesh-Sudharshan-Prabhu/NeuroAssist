@@ -65,30 +65,3 @@ body {
     @apply bg-background text-foreground;
   }
 }
-
-@layer utilities {
-  .print-only {
-    display: none;
-  }
-}
-
-@media print {
-  body {
-    background-color: white !important;
-  }
-  .no-print {
-    display: none !important;
-  }
-  .print-only {
-    display: block !important;
-  }
-  .printable-area {
-    box-shadow: none !important;
-    border: none !important;
-    margin: 0;
-    padding: 0;
-  }
-  main {
-    padding: 0 !important;
-  }
-}

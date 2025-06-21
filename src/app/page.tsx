@@ -57,7 +57,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="py-4 px-4 sm:px-6 md:px-8 no-print">
+      <header className="py-4 px-4 sm:px-6 md:px-8">
         <div className="flex items-center gap-2">
           <BrainCircuit className="h-8 w-8 text-primary" />
           <h1 className="text-2xl font-bold text-gray-800">NeuroAssist</h1>
@@ -80,7 +80,7 @@ export default function Home() {
         </div>
       </main>
 
-      <footer className="text-center p-4 text-xs text-muted-foreground no-print">
+      <footer className="text-center p-4 text-xs text-muted-foreground">
         <p>
           Disclaimer: NeuroAssist is for informational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment.
         </p>
