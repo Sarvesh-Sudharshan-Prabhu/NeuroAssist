@@ -56,7 +56,7 @@ export async function predictStrokeType(input: PredictStrokeTypeInput): Promise<
 
 const prompt = ai.definePrompt({
   name: 'predictStrokeTypePrompt',
-  input: {schema: PredictStrokeTypeInputSchema},
+  input: {schema: z.any()},
   output: {schema: PredictStrokeTypeOutputSchema},
   prompt: `You are an expert emergency physician specializing in stroke diagnosis.
 Your task is to determine the stroke type, tPA eligibility, and the recommended course of action based on the provided patient data.
@@ -74,20 +74,11 @@ Examine the CT scan image. Classify it as 'Ischemic', 'Hemorrhagic', or 'Uncerta
 - If the image is unclear or shows no clear signs, classify as 'Uncertain'.
 
 **Method B: Siriraj Stroke Score (When No Image is Provided)**
-Calculate the Siriraj Stroke Score using the formula:
-**Score = (2.5 × LOC) + (2 × V) + (2 × H) + (0.1 × DBP) – (3 × A) – 12**
+The Siriraj Stroke Score has been pre-calculated based on clinical data. Use this result to determine the diagnosis.
+- **Calculated Siriraj Score:** {{sirirajScore}}
+- **Interpretation:** {{sirirajInterpretation}}
 
-Where:
-- **LOC (Level of Consciousness):** 0 for Conscious, 1 for Drowsy, 2 for Comatose.
-- **V (Vomiting):** 1 if true, 0 if false.
-- **H (Headache):** 1 if true, 0 if false.
-- **DBP (Diastolic Blood Pressure):** The patient's diastolic BP value.
-- **A (Atheroma Markers):** 1 if the patient has a history of Hypertension OR Diabetes OR Smoking. 0 if none of these are present.
-
-Interpret the score:
-- **Score > +1:** Diagnose as **Hemorrhagic**.
-- **Score < -1:** Diagnose as **Ischemic**.
-- **Score between -1 and +1 (inclusive):** Diagnose as **Uncertain**.
+Your diagnosis for stroke type MUST match this interpretation.
 
 **Step 2: Confidence Score Calculation**
 Calculate a confidence score for your diagnosis between 0.0 and 1.0.
@@ -178,8 +169,57 @@ const predictStrokeTypeFlow = ai.defineFlow(
     inputSchema: PredictStrokeTypeInputSchema,
     outputSchema: PredictStrokeTypeOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
+  async (input) => {
+    const {
+      ctScanImage,
+      levelOfConsciousness,
+      vomiting,
+      headache,
+      diastolicBloodPressure,
+      historyHypertension,
+      historyDiabetes,
+      historySmoking,
+    } = input;
+
+    let sirirajScore: number | undefined = undefined;
+    let sirirajInterpretation: string | undefined = undefined;
+
+    if (!ctScanImage) {
+      const locScore =
+        levelOfConsciousness === 'Conscious'
+          ? 0
+          : levelOfConsciousness === 'Drowsy'
+          ? 1
+          : 2;
+      const vomitingScore = vomiting ? 1 : 0;
+      const headacheScore = headache ? 1 : 0;
+      const atheromaScore =
+        historyHypertension || historyDiabetes || historySmoking ? 1 : 0;
+
+      sirirajScore =
+        2.5 * locScore +
+        2 * vomitingScore +
+        2 * headacheScore +
+        0.1 * diastolicBloodPressure -
+        3 * atheromaScore -
+        12;
+
+      if (sirirajScore > 1) {
+        sirirajInterpretation = 'Hemorrhagic';
+      } else if (sirirajScore < -1) {
+        sirirajInterpretation = 'Ischemic';
+      } else {
+        sirirajInterpretation = 'Uncertain';
+      }
+    }
+
+    const promptInput = {
+      ...input,
+      sirirajScore: sirirajScore?.toFixed(2),
+      sirirajInterpretation,
+    };
+
+    const {output} = await prompt(promptInput);
     return output!;
   }
 );
