@@ -1,3 +1,4 @@
+
 // src/ai/flows/predict-stroke-type.ts
 'use server';
 
@@ -100,13 +101,17 @@ Based on all the information, provide a JSON response with the determined stroke
 
 - **If Stroke Type is Hemorrhagic:** The action must be a multi-line string containing this exact protocol:
 "❌ HEMORRHAGIC STROKE DETECTED – tPA CONTRAINDICATED
-Urgent neurosurgical consultation required.
+Urgent neurosurgical consultation and emergency transfer required.
+
+Immediate Actions:
+- **Alert Nearby Hospitals:** Notify stroke centers of an incoming critical patient.
+- **Activate Satellite Comms (if available):** If in a remote area with no internet, use satellite device for emergency communication.
 
 Stabilization Protocol:
-- Stabilize Blood Pressure: Check BP immediately. If SBP > 180 mmHg, administer antihypertensives to lower it gradually.
-- Elevate Head: Keep patient's head elevated to 30 degrees to reduce intracranial pressure.
-- Minimize Stimulation: Reduce light, sound, and movement.
-- Control Fever: Apply cool packs if the patient is feverish to reduce brain metabolism."
+- **Stabilize Blood Pressure:** Check BP immediately. If SBP > 180 mmHg, administer antihypertensives to lower it gradually.
+- **Elevate Head:** Keep patient's head elevated to 30 degrees to reduce intracranial pressure.
+- **Minimize Stimulation:** Reduce light, sound, and movement.
+- **Control Fever:** Apply cool packs if the patient is feverish to reduce brain metabolism."
 
 - **If Stroke Type is Ischemic and tPA eligible:** Provide a concise action, for example: "Administer tPA under supervision per protocol. Transfer to a stroke-ready hospital immediately."
 
