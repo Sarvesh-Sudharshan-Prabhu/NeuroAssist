@@ -6,12 +6,11 @@ const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
 export const symptomSchema = z.object({
   ctScanImage: z
     .any()
-    .refine((file) => !!file, 'CT scan image is required.')
-    .refine((file) => file?.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
+    .refine((file) => !file || file?.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
     .refine(
-      (file) => ACCEPTED_IMAGE_TYPES.includes(file?.type),
+      (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file?.type),
       "Only .jpg, .jpeg, and .png formats are supported."
-    ),
+    ).optional(),
   timeSinceOnset: z.coerce
     .number({ invalid_type_error: 'Please enter a valid number.' })
     .min(0, 'Time must be a positive number.'),
@@ -20,7 +19,7 @@ export const symptomSchema = z.object({
   armWeakness: z.enum(['None', 'Left', 'Right', 'Both'], {
     required_error: 'You need to select an arm weakness option.',
   }),
-  bloodPressure: z.coerce
+  systolicBloodPressure: z.coerce
     .number({ invalid_type_error: 'Please enter a valid number.' })
     .min(0, 'BP must be a positive number.')
     .optional()
@@ -28,6 +27,14 @@ export const symptomSchema = z.object({
   historyHypertension: z.boolean().default(false),
   historyDiabetes: z.boolean().default(false),
   historySmoking: z.boolean().default(false),
+  levelOfConsciousness: z.enum(['Conscious', 'Drowsy', 'Comatose'], {
+      required_error: 'You need to select a level of consciousness.',
+  }),
+  vomiting: z.boolean().default(false),
+  headache: z.boolean().default(false),
+  diastolicBloodPressure: z.coerce
+    .number({ invalid_type_error: 'Please enter a valid number.' })
+    .min(0, 'Diastolic BP must be a positive number.'),
 });
 
 export type SymptomFormValues = z.infer<typeof symptomSchema> & {

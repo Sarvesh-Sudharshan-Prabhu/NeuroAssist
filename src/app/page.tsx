@@ -18,7 +18,7 @@ const toDataURL = (file: File): Promise<string> =>
     reader.readAsDataURL(file);
   });
 
-type ResultState = (PredictionResult & { uploadedImage: string }) | null;
+type ResultState = (PredictionResult & { uploadedImage?: string }) | null;
 
 export default function Home() {
   const [result, setResult] = useState<ResultState | null>(null);
@@ -29,18 +29,8 @@ export default function Home() {
     setIsLoading(true);
     setResult(null);
 
-    if (!data.ctScanImage) {
-      toast({
-        variant: 'destructive',
-        title: 'Analysis Failed',
-        description: 'Please upload a CT scan image.',
-      });
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      const imageDataUrl = await toDataURL(data.ctScanImage);
+      const imageDataUrl = data.ctScanImage ? await toDataURL(data.ctScanImage) : undefined;
       
       const predictionInput = {
         ctScanImage: imageDataUrl,
@@ -48,10 +38,14 @@ export default function Home() {
         faceDroop: data.faceDroop,
         speechSlurred: data.speechSlurred,
         armWeakness: data.armWeakness,
-        bloodPressure: data.bloodPressure ? Number(data.bloodPressure) : undefined,
+        systolicBloodPressure: data.systolicBloodPressure ? Number(data.systolicBloodPressure) : undefined,
         historyHypertension: data.historyHypertension,
         historyDiabetes: data.historyDiabetes,
         historySmoking: data.historySmoking,
+        levelOfConsciousness: data.levelOfConsciousness,
+        vomiting: data.vomiting,
+        headache: data.headache,
+        diastolicBloodPressure: Number(data.diastolicBloodPressure),
       };
       
       const prediction = await predictStrokeType(predictionInput);
@@ -96,7 +90,7 @@ export default function Home() {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center gap-4 text-center">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="text-lg font-medium text-muted-foreground">Analyzing image and symptoms...</p>
+              <p className="text-lg font-medium text-muted-foreground">Analyzing symptoms...</p>
               <p className="text-sm text-muted-foreground">Please wait while our AI processes the information.</p>
             </div>
           ) : result ? (

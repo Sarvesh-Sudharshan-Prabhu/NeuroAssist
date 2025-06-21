@@ -1,9 +1,8 @@
-
 // src/ai/flows/predict-stroke-type.ts
 'use server';
 
 /**
- * @fileOverview Diagnoses stroke type from a CT image and patient symptoms.
+ * @fileOverview Diagnoses stroke type from a CT image or clinical symptoms.
  *
  * - predictStrokeType - A function that handles the stroke diagnosis process.
  * - PredictStrokeTypeInput - The input type for the predictStrokeType function.
@@ -18,7 +17,7 @@ const PredictStrokeTypeInputSchema = z.object({
     .string()
     .describe(
       "A CT scan of a patient's brain, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
-    ),
+    ).optional(),
   timeSinceOnset: z
     .number()
     .describe('Time in minutes since the onset of symptoms.'),
@@ -27,11 +26,16 @@ const PredictStrokeTypeInputSchema = z.object({
   armWeakness: z
     .enum(['Left', 'Right', 'Both', 'None'])
     .describe('Arm weakness (Left, Right, Both, or None).'),
-  bloodPressure: z.number().optional().describe('Systolic blood pressure (if available).'),
+  systolicBloodPressure: z.number().optional().describe('Systolic blood pressure (if available).'),
   historyHypertension: z.boolean().describe('History of hypertension.'),
   historyDiabetes: z.boolean().describe('History of diabetes.'),
   historySmoking: z.boolean().describe('History of smoking.'),
+  levelOfConsciousness: z.enum(['Conscious', 'Drowsy', 'Comatose']).describe('Level of consciousness (Conscious, Drowsy/Stuporous, or Comatose).'),
+  vomiting: z.boolean().describe('Whether the patient has been vomiting.'),
+  headache: z.boolean().describe('Whether the patient has a headache.'),
+  diastolicBloodPressure: z.number().describe('Diastolic blood pressure.'),
 });
+
 
 export type PredictStrokeTypeInput = z.infer<typeof PredictStrokeTypeInputSchema>;
 
@@ -54,47 +58,70 @@ const prompt = ai.definePrompt({
   name: 'predictStrokeTypePrompt',
   input: {schema: PredictStrokeTypeInputSchema},
   output: {schema: PredictStrokeTypeOutputSchema},
-  prompt: `You are an expert radiologist and emergency physician specializing in stroke diagnosis.
-Analyze the provided CT scan image and patient symptoms to determine the stroke type, tPA eligibility, and the recommended course of action. Follow these steps:
+  prompt: `You are an expert emergency physician specializing in stroke diagnosis.
+Your task is to determine the stroke type, tPA eligibility, and the recommended course of action based on the provided patient data.
 
-**1. CT Scan Analysis:**
-Examine the CT scan image provided. Classify it as 'Ischemic', 'Hemorrhagic', or 'Uncertain'.
+**DIAGNOSTIC PROTOCOL: Follow these steps in order.**
+
+**Step 1: Determine the Primary Diagnostic Method**
+- **IF a CT Scan is provided**, use it as the primary source for diagnosis. The clinical symptoms serve as supporting data.
+- **IF a CT Scan is NOT provided**, you MUST use the Siriraj Stroke Score as the primary method for diagnosis.
+
+**Method A: CT Scan Analysis (When Image is Provided)**
+Examine the CT scan image. Classify it as 'Ischemic', 'Hemorrhagic', or 'Uncertain'.
 - **Ischemic strokes** may show as a darker, hypodense area.
 - **Hemorrhagic strokes** will show as a bright, hyperdense area (blood).
 - If the image is unclear or shows no clear signs, classify as 'Uncertain'.
 
-**2. Symptom Correlation:**
-Correlate the image findings with the patient's symptoms and history.
-- Time since onset is critical. tPA is generally only effective within 4.5 hours (270 minutes).
-- High blood pressure is a risk factor for both, but a contraindication for tPA if excessively high and a key indicator for hemorrhage.
-- Facial droop, slurred speech, and arm weakness confirm stroke-like symptoms.
+**Method B: Siriraj Stroke Score (When No Image is Provided)**
+Calculate the Siriraj Stroke Score using the formula:
+**Score = (2.5 × LOC) + (2 × V) + (2 × H) + (0.1 × DBP) – (3 × A) – 12**
 
-**3. Confidence Score Calculation:**
-Based on the clarity of the CT scan and the correlation with symptoms, calculate a confidence score for your diagnosis between 0.0 and 1.0.
-- **High Confidence (0.8 - 1.0):** The CT scan shows a clear, unambiguous sign of either an ischemic or hemorrhagic stroke that strongly correlates with the symptoms.
-- **Medium Confidence (0.5 - 0.79):** The CT scan shows suggestive but not definitive signs, or there's a mild discrepancy between the scan and symptoms.
-- **Low Confidence (< 0.5):** The CT scan is of poor quality, shows no clear signs, is ambiguous (leading to an 'Uncertain' type), or the findings strongly contradict the clinical symptoms.
+Where:
+- **LOC (Level of Consciousness):** 0 for Conscious, 1 for Drowsy, 2 for Comatose.
+- **V (Vomiting):** 1 if true, 0 if false.
+- **H (Headache):** 1 if true, 0 if false.
+- **DBP (Diastolic Blood Pressure):** The patient's diastolic BP value.
+- **A (Atheroma Markers):** 1 if the patient has a history of Hypertension OR Diabetes OR Smoking. 0 if none of these are present.
 
-**4. Determine tPA Eligibility:**
-- A patient is **tPA eligible** if:
-  - Stroke type is confidently identified as **Ischemic**.
-  - Time since onset is **less than 270 minutes**.
-  - There are no other major contraindications (like recent surgery or known bleeding disorders, which are not provided here but assume none unless BP is very high).
-- A patient is **NOT tPA eligible** if:
-  - Stroke type is **Hemorrhagic**.
-  - Stroke type is **Uncertain**.
-  - Time since onset is **greater than or equal to 270 minutes**.
+Interpret the score:
+- **Score > +1:** Diagnose as **Hemorrhagic**.
+- **Score < -1:** Diagnose as **Ischemic**.
+- **Score between -1 and +1 (inclusive):** Diagnose as **Uncertain**.
+
+**Step 2: Confidence Score Calculation**
+Calculate a confidence score for your diagnosis between 0.0 and 1.0.
+- **If using CT Scan:**
+  - **High (0.8 - 1.0):** Clear, unambiguous CT sign that strongly correlates with symptoms.
+  - **Medium (0.5 - 0.79):** Suggestive but not definitive CT signs.
+  - **Low (< 0.5):** Poor quality CT, no clear signs, or ambiguous findings.
+- **If using Siriraj Score:**
+  - **High (0.85 - 0.95):** Score is strongly positive (> +2) or strongly negative (< -2).
+  - **Medium (0.6 - 0.84):** Score is between 1-2 or -1 to -2.
+  - **Low (0.4 - 0.59):** Score is close to the -1 to +1 indeterminate range.
+
+**Step 3: Determine tPA Eligibility**
+A patient is **tPA eligible** ONLY IF:
+- Stroke type is confidently identified as **Ischemic**.
+- Time since onset is **less than 270 minutes**.
+A patient is **NOT tPA eligible** under any other circumstances (Hemorrhagic, Uncertain, or Ischemic outside the window).
 
 **Patient Information:**
-CT Scan: {{media url=ctScanImage}}
+CT Scan: {{#if ctScanImage}}{{media url=ctScanImage}}{{else}}Not Provided{{/if}}
 Time since symptom onset: {{timeSinceOnset}} minutes
 Face droop: {{faceDroop}}
 Slurred speech: {{speechSlurred}}
 Arm weakness: {{armWeakness}}
-Blood pressure: {{bloodPressure}}
+Systolic Blood pressure: {{systolicBloodPressure}}
 History of hypertension: {{historyHypertension}}
 History of diabetes: {{historyDiabetes}}
 History of smoking: {{historySmoking}}
+
+**Siriraj Score Data:**
+Level of Consciousness: {{levelOfConsciousness}}
+Vomiting: {{vomiting}}
+Headache: {{headache}}
+Diastolic Blood Pressure: {{diastolicBloodPressure}}
 
 **Task & Action Formulation:**
 Based on all the information, provide a JSON response with the determined stroke type, confidence, tPA eligibility, and recommended action. Formulate the 'action' field as a multi-line string following these specific protocols:

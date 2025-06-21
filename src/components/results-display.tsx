@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
 interface ResultsDisplayProps {
-  result: PredictionResult & { uploadedImage: string };
+  result: PredictionResult & { uploadedImage?: string };
   onReset: () => void;
 }
 
@@ -153,18 +153,20 @@ export function ResultsDisplay({ result, onReset }: ResultsDisplayProps) {
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Diagnosis Results</CardTitle>
-          <CardDescription>AI-powered diagnosis based on CT scan and patient data.</CardDescription>
+          <CardDescription>AI-powered diagnosis based on patient data.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
             
-          <div className="bg-muted/50 rounded-lg p-2 flex justify-center">
-            <img 
-                src={result.uploadedImage} 
-                alt="Uploaded CT Scan"
-                data-ai-hint="ct scan" 
-                className="rounded-md object-contain max-h-64"
-             />
-          </div>
+          {result.uploadedImage && (
+            <div className="bg-muted/50 rounded-lg p-2 flex justify-center">
+              <img 
+                  src={result.uploadedImage} 
+                  alt="Uploaded CT Scan"
+                  data-ai-hint="ct scan" 
+                  className="rounded-md object-contain max-h-64"
+               />
+            </div>
+          )}
 
           <div className={cn(
              "p-4 rounded-lg border space-y-2",

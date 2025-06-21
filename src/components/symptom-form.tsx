@@ -41,10 +41,14 @@ export function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
       faceDroop: false,
       speechSlurred: false,
       armWeakness: 'None',
-      bloodPressure: '',
+      systolicBloodPressure: '',
       historyHypertension: false,
       historyDiabetes: false,
       historySmoking: false,
+      levelOfConsciousness: 'Conscious',
+      vomiting: false,
+      headache: false,
+      diastolicBloodPressure: 0,
     },
   });
 
@@ -54,7 +58,7 @@ export function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl font-bold">Stroke Diagnosis</CardTitle>
-            <CardDescription>Upload a CT scan and enter patient details for an AI-powered diagnosis.</CardDescription>
+            <CardDescription>Upload a CT scan or enter patient details for an AI-powered diagnosis.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <FormField
@@ -62,7 +66,7 @@ export function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
               name="ctScanImage"
               render={({ field: { onChange, value, ...rest } }) => (
                 <FormItem>
-                  <FormLabel>CT Scan Image</FormLabel>
+                  <FormLabel>CT Scan Image (Optional)</FormLabel>
                   <FormControl>
                      <Input 
                         type="file" 
@@ -72,7 +76,7 @@ export function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
                         {...rest}
                      />
                   </FormControl>
-                  <FormDescription>Upload the patient's axial CT brain scan (.jpg, .png).</FormDescription>
+                  <FormDescription>If not available, diagnosis will be based on clinical signs.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -98,12 +102,12 @@ export function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
                 />
                 <FormField
                   control={form.control}
-                  name="bloodPressure"
+                  name="systolicBloodPressure"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Systolic Blood Pressure (optional)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="e.g., 150" {...field} onChange={e => field.onChange(e.target.value)} />
+                        <Input type="number" placeholder="e.g., 150" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -164,9 +168,83 @@ export function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
                 />
               </div>
             </div>
+
             <Separator />
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">Patient History</h3>
+              <h3 className="text-lg font-medium">Siriraj Stroke Score Inputs</h3>
+              <FormDescription>Used to calculate the Siriraj Stroke Score, especially when a CT scan is not available.</FormDescription>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="levelOfConsciousness"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Level of Consciousness</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select consciousness level" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Conscious">Conscious</SelectItem>
+                          <SelectItem value="Drowsy">Drowsy / Stuporous</SelectItem>
+                          <SelectItem value="Comatose">Comatose</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="diastolicBloodPressure"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Diastolic Blood Pressure (mmHg)</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="e.g., 90" {...field} onChange={e => field.onChange(e.target.valueAsNumber)} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <FormField
+                  control={form.control}
+                  name="vomiting"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                      <div className="space-y-0.5">
+                        <FormLabel>Vomiting</FormLabel>
+                      </div>
+                      <FormControl>
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="headache"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                      <div className="space-y-0.5">
+                        <FormLabel>Headache</FormLabel>
+                      </div>
+                      <FormControl>
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <Separator />
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Patient History (Atheroma Markers)</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
@@ -221,7 +299,7 @@ export function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
                   Analyzing...
                 </>
               ) : (
-                'Analyze CT Scan & Diagnose'
+                'Diagnose'
               )}
             </Button>
           </CardFooter>
