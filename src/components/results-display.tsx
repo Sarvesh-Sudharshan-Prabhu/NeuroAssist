@@ -184,7 +184,7 @@ export function ResultsDisplay({ result, onReset }: ResultsDisplayProps) {
                     </Badge>
                 )}
              </div>
-             <p className="text-lg font-semibold text-foreground whitespace-pre-wrap">{result.action}</p>
+             <p className="text-base text-foreground whitespace-pre-wrap leading-relaxed">{result.action}</p>
           </div>
           
           <Separator />
