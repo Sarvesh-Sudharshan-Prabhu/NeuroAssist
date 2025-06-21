@@ -1,7 +1,17 @@
 import { z } from 'zod';
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
+
 export const symptomSchema = z.object({
-  strokeTypeToGenerate: z.enum(['Ischemic', 'Hemorrhagic']),
+  ctScanImage: z
+    .any()
+    .refine((file) => !!file, 'CT scan image is required.')
+    .refine((file) => file?.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
+    .refine(
+      (file) => ACCEPTED_IMAGE_TYPES.includes(file?.type),
+      "Only .jpg, .jpeg, and .png formats are supported."
+    ),
   timeSinceOnset: z.coerce
     .number({ invalid_type_error: 'Please enter a valid number.' })
     .min(0, 'Time must be a positive number.'),
@@ -20,7 +30,9 @@ export const symptomSchema = z.object({
   historySmoking: z.boolean().default(false),
 });
 
-export type SymptomFormValues = z.infer<typeof symptomSchema>;
+export type SymptomFormValues = z.infer<typeof symptomSchema> & {
+    ctScanImage?: File;
+};
 
 export type PredictionResult = {
   strokeType: 'Ischemic' | 'Hemorrhagic' | 'Uncertain';

@@ -7,34 +7,43 @@ import { SymptomForm } from '@/components/symptom-form';
 import { ResultsDisplay } from '@/components/results-display';
 import { useToast } from '@/hooks/use-toast';
 import { predictStrokeType } from '@/ai/flows/predict-stroke-type';
-import { generateStrokeImage } from '@/ai/flows/generate-stroke-image';
 import type { SymptomFormValues, PredictionResult } from '@/types';
 
-type ResultState = (PredictionResult & { generatedImage: string }) | null;
+// Helper function to read file as Data URL
+const toDataURL = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+type ResultState = (PredictionResult & { uploadedImage: string }) | null;
 
 export default function Home() {
   const [result, setResult] = useState<ResultState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState('');
   const { toast } = useToast();
 
   const handlePredict = async (data: SymptomFormValues) => {
     setIsLoading(true);
     setResult(null);
 
-    try {
-      setLoadingStep('Generating CT scan image...');
-      const generatedImageResponse = await generateStrokeImage({
-        strokeType: data.strokeTypeToGenerate,
+    if (!data.ctScanImage) {
+      toast({
+        variant: 'destructive',
+        title: 'Analysis Failed',
+        description: 'Please upload a CT scan image.',
       });
+      setIsLoading(false);
+      return;
+    }
 
-      if (!generatedImageResponse || !generatedImageResponse.image) {
-        throw new Error('Failed to generate CT scan image.');
-      }
-
-      setLoadingStep('Analyzing image and symptoms...');
+    try {
+      const imageDataUrl = await toDataURL(data.ctScanImage);
+      
       const predictionInput = {
-        ctScanImage: generatedImageResponse.image,
+        ctScanImage: imageDataUrl,
         timeSinceOnset: data.timeSinceOnset,
         faceDroop: data.faceDroop,
         speechSlurred: data.speechSlurred,
@@ -53,7 +62,7 @@ export default function Home() {
       
       setResult({
         ...prediction,
-        generatedImage: generatedImageResponse.image,
+        uploadedImage: imageDataUrl,
       });
 
     } catch (error) {
@@ -66,7 +75,6 @@ export default function Home() {
       });
     } finally {
       setIsLoading(false);
-      setLoadingStep('');
     }
   };
 
@@ -88,7 +96,7 @@ export default function Home() {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center gap-4 text-center">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="text-lg font-medium text-muted-foreground">{loadingStep}</p>
+              <p className="text-lg font-medium text-muted-foreground">Analyzing image and symptoms...</p>
               <p className="text-sm text-muted-foreground">Please wait while our AI processes the information.</p>
             </div>
           ) : result ? (

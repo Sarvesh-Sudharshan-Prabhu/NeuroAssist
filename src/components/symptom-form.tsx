@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -35,7 +36,7 @@ export function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
   const form = useForm<SymptomFormValues>({
     resolver: zodResolver(symptomSchema),
     defaultValues: {
-      strokeTypeToGenerate: 'Ischemic',
+      ctScanImage: undefined,
       timeSinceOnset: 0,
       faceDroop: false,
       speechSlurred: false,
@@ -53,31 +54,30 @@ export function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl font-bold">Stroke Diagnosis</CardTitle>
-            <CardDescription>Select a stroke type to simulate and enter patient details for an AI-powered diagnosis.</CardDescription>
+            <CardDescription>Upload a CT scan and enter patient details for an AI-powered diagnosis.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <FormField
               control={form.control}
-              name="strokeTypeToGenerate"
-              render={({ field }) => (
+              name="ctScanImage"
+              render={({ field: { onChange, value, ...rest } }) => (
                 <FormItem>
-                  <FormLabel>Simulated Stroke Type</FormLabel>
-                   <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a stroke type to generate" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Ischemic">Ischemic</SelectItem>
-                      <SelectItem value="Hemorrhagic">Hemorrhagic</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>CT Scan Image</FormLabel>
+                  <FormControl>
+                     <Input 
+                        type="file" 
+                        accept="image/png, image/jpeg" 
+                        onChange={(e) => onChange(e.target.files ? e.target.files[0] : null)}
+                        className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                        {...rest}
+                     />
+                  </FormControl>
+                  <FormDescription>Upload the patient's axial CT brain scan (.jpg, .png).</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
+            
             <Separator />
             
             <div className="space-y-4">
@@ -221,7 +221,7 @@ export function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
                   Analyzing...
                 </>
               ) : (
-                'Generate Scan & Diagnose'
+                'Analyze CT Scan & Diagnose'
               )}
             </Button>
           </CardFooter>
