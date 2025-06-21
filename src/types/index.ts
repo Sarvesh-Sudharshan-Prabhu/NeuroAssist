@@ -1,9 +1,7 @@
 import { z } from 'zod';
 
 export const symptomSchema = z.object({
-  ctScanImage: z.string({ required_error: 'A CT scan image is required.' })
-    .min(1, 'A CT scan image is required.')
-    .refine(val => val.startsWith('data:image/'), { message: 'Please upload a valid image file.' }),
+  strokeTypeToGenerate: z.enum(['Ischemic', 'Hemorrhagic']),
   timeSinceOnset: z.coerce
     .number({ invalid_type_error: 'Please enter a valid number.' })
     .min(0, 'Time must be a positive number.'),

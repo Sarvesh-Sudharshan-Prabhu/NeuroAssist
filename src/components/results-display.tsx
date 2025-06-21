@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 
 interface ResultsDisplayProps {
-  result: PredictionResult;
+  result: PredictionResult & { generatedImage: string };
   onReset: () => void;
 }
 
@@ -68,9 +68,19 @@ export function ResultsDisplay({ result, onReset }: ResultsDisplayProps) {
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Diagnosis Results</CardTitle>
-          <CardDescription>AI-powered diagnosis based on CT scan and patient data.</CardDescription>
+          <CardDescription>AI-powered diagnosis based on generated CT scan and patient data.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+            
+          <div className="bg-muted/50 rounded-lg p-2 flex justify-center">
+            <img 
+                src={result.generatedImage} 
+                alt="Generated CT Scan"
+                data-ai-hint="ct scan" 
+                className="rounded-md object-contain max-h-64"
+             />
+          </div>
+
           <div className="bg-accent/20 p-4 rounded-lg border border-accent/30 space-y-2">
              <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-muted-foreground">Recommended Action</p>
