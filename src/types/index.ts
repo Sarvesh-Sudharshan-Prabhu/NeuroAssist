@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
 export const symptomSchema = z.object({
+  ctScanImage: z.string({ required_error: 'A CT scan image is required.' })
+    .min(1, 'A CT scan image is required.')
+    .refine(val => val.startsWith('data:image/'), { message: 'Please upload a valid image file.' }),
   timeSinceOnset: z.coerce
     .number({ invalid_type_error: 'Please enter a valid number.' })
     .min(0, 'Time must be a positive number.'),
@@ -22,11 +25,8 @@ export const symptomSchema = z.object({
 export type SymptomFormValues = z.infer<typeof symptomSchema>;
 
 export type PredictionResult = {
-  strokeType: 'Likely Ischemic' | 'Likely Hemorrhagic' | 'Uncertain';
-  confidenceLevel: number;
-  recommendedAction:
-    | 'Give tPA'
-    | 'Refer urgently, no tPA'
-    | 'Monitor and reassess in 30 mins';
-  justification: string;
+  strokeType: 'Ischemic' | 'Hemorrhagic' | 'Uncertain';
+  confidence: number;
+  tpaEligible: boolean;
+  action: string;
 };

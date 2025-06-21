@@ -1,15 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { Loader2 } from 'lucide-react';
+import { Loader2, UploadCloud } from 'lucide-react';
 import type { SymptomFormValues } from '@/types';
 import { symptomSchema } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -33,9 +33,12 @@ interface SymptomFormProps {
 }
 
 export function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
   const form = useForm<SymptomFormValues>({
     resolver: zodResolver(symptomSchema),
     defaultValues: {
+      ctScanImage: '',
       timeSinceOnset: 0,
       faceDroop: false,
       speechSlurred: false,
@@ -52,10 +55,54 @@ export function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl font-bold">Stroke Assessment</CardTitle>
-            <CardDescription>Enter patient details to predict stroke type and recommend action.</CardDescription>
+            <CardTitle className="text-2xl font-bold">Stroke Diagnosis</CardTitle>
+            <CardDescription>Upload a CT scan and enter patient details for an AI-powered diagnosis.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            <FormField
+              control={form.control}
+              name="ctScanImage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>CT Scan Image</FormLabel>
+                  <FormControl>
+                    <div className="relative flex justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+                      <Input
+                        id="ct-scan-upload"
+                        type="file"
+                        className="absolute inset-0 z-10 w-full h-full opacity-0 cursor-pointer"
+                        accept="image/png, image/jpeg"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              const dataUri = reader.result as string;
+                              setImagePreview(dataUri);
+                              field.onChange(dataUri);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                      {imagePreview ? (
+                        <img src={imagePreview} alt="CT Scan Preview" className="absolute inset-0 w-full h-full object-contain rounded-lg p-1" />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                          <UploadCloud className="w-12 h-12" />
+                          <p className="mt-2 text-sm">Click or drag to upload</p>
+                          <p className="text-xs">PNG or JPG</p>
+                        </div>
+                      )}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Separator />
+            
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Clinical Findings</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -66,7 +113,7 @@ export function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
                     <FormItem>
                       <FormLabel>Time Since Symptom Onset (minutes)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="e.g., 60" {...field} />
+                        <Input type="number" placeholder="e.g., 60" {...field} onChange={e => field.onChange(e.target.valueAsNumber)} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -79,7 +126,7 @@ export function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
                     <FormItem>
                       <FormLabel>Systolic Blood Pressure (optional)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="e.g., 150" {...field} />
+                        <Input type="number" placeholder="e.g., 150" {...field} onChange={e => field.onChange(e.target.valueAsNumber)} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -197,7 +244,7 @@ export function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
                   Analyzing...
                 </>
               ) : (
-                'Analyze Symptoms'
+                'Diagnose from CT & Symptoms'
               )}
             </Button>
           </CardFooter>

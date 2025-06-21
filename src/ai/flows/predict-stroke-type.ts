@@ -2,9 +2,9 @@
 'use server';
 
 /**
- * @fileOverview Predicts the likelihood of stroke type based on patient data.
+ * @fileOverview Diagnoses stroke type from a CT image and patient symptoms.
  *
- * - predictStrokeType - A function that handles the stroke type prediction process.
+ * - predictStrokeType - A function that handles the stroke diagnosis process.
  * - PredictStrokeTypeInput - The input type for the predictStrokeType function.
  * - PredictStrokeTypeOutput - The return type for the predictStrokeType function.
  */
@@ -13,6 +13,11 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const PredictStrokeTypeInputSchema = z.object({
+  ctScanImage: z
+    .string()
+    .describe(
+      "A CT scan of a patient's brain, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+    ),
   timeSinceOnset: z
     .number()
     .describe('Time in minutes since the onset of symptoms.'),
@@ -31,12 +36,11 @@ export type PredictStrokeTypeInput = z.infer<typeof PredictStrokeTypeInputSchema
 
 const PredictStrokeTypeOutputSchema = z.object({
   strokeType: z
-    .enum(['Likely Ischemic', 'Likely Hemorrhagic', 'Uncertain'])
-    .describe('The predicted stroke type.'),
-  confidenceLevel: z.number().describe('The confidence level of the prediction (0-1).'),
-  recommendedAction: z
-    .enum(['Give tPA', 'Refer urgently, no tPA', 'Monitor and reassess in 30 mins'])
-    .describe('The recommended action.'),
+    .enum(['Ischemic', 'Hemorrhagic', 'Uncertain'])
+    .describe('The predicted stroke type based on the CT scan and symptoms.'),
+  confidence: z.number().min(0).max(1).describe('The confidence level of the prediction (0-1).'),
+  tpaEligible: z.boolean().describe('Whether the patient is eligible for tPA treatment.'),
+  action: z.string().describe('The recommended action and justification.'),
 });
 
 export type PredictStrokeTypeOutput = z.infer<typeof PredictStrokeTypeOutputSchema>;
@@ -49,10 +53,33 @@ const prompt = ai.definePrompt({
   name: 'predictStrokeTypePrompt',
   input: {schema: PredictStrokeTypeInputSchema},
   output: {schema: PredictStrokeTypeOutputSchema},
-  prompt: `You are an experienced emergency physician specializing in stroke diagnosis.
-Based on the provided patient information, determine the likely stroke type (Ischemic, Hemorrhagic, or Uncertain), provide a confidence level (0-1), and recommend the most appropriate next action (Give tPA, Refer urgently, Monitor and reassess in 30 mins).
+  prompt: `You are an expert radiologist and emergency physician specializing in stroke diagnosis.
+Analyze the provided CT scan image and patient symptoms to determine the stroke type, tPA eligibility, and the recommended course of action.
 
-Patient Information:
+**1. CT Scan Analysis:**
+Examine the CT scan image provided. Classify it as 'Ischemic', 'Hemorrhagic', or 'Uncertain'.
+- **Ischemic strokes** may show as a darker, hypodense area.
+- **Hemorrhagic strokes** will show as a bright, hyperdense area (blood).
+- If the image is unclear or shows no clear signs, classify as 'Uncertain'.
+
+**2. Symptom Correlation:**
+Correlate the image findings with the patient's symptoms and history.
+- Time since onset is critical. tPA is generally only effective within 4.5 hours (270 minutes).
+- High blood pressure is a risk factor for both, but a contraindication for tPA if excessively high and a key indicator for hemorrhage.
+- Facial droop, slurred speech, and arm weakness confirm stroke-like symptoms.
+
+**3. Determine tPA Eligibility and Action:**
+- A patient is **tPA eligible** if:
+  - Stroke type is confidently identified as **Ischemic**.
+  - Time since onset is **less than 270 minutes**.
+  - There are no other major contraindications (like recent surgery or known bleeding disorders, which are not provided here but assume none unless BP is very high).
+- A patient is **NOT tPA eligible** if:
+  - Stroke type is **Hemorrhagic**.
+  - Stroke type is **Uncertain**.
+  - Time since onset is **greater than 270 minutes**.
+
+**Patient Information:**
+CT Scan: {{media url=ctScanImage}}
 Time since symptom onset: {{timeSinceOnset}} minutes
 Face droop: {{faceDroop}}
 Slurred speech: {{speechSlurred}}
@@ -62,14 +89,10 @@ History of hypertension: {{historyHypertension}}
 History of diabetes: {{historyDiabetes}}
 History of smoking: {{historySmoking}}
 
-Consider the following:
-- Ischemic stroke is more common.
-- Hemorrhagic stroke is often associated with high blood pressure.
-- Time since onset is critical for tPA administration.
-- Use the absence of positive indicators to default to "Uncertain".
-
-Respond with a JSON object conforming to the following schema:
-${JSON.stringify(PredictStrokeTypeOutputSchema.describe(''))}`,
+**Task:**
+Based on all the information, provide a JSON response with the determined stroke type, your confidence in this diagnosis, whether the patient is tPA eligible, and a clear, concise recommended action.
+For the action, be specific. For example: "Administer tPA under supervision, transfer to CT-capable hospital" or "Urgent neurosurgical consult required due to hemorrhage. Do not administer tPA."
+`,
 });
 
 const predictStrokeTypeFlow = ai.defineFlow(

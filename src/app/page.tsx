@@ -7,7 +7,6 @@ import { SymptomForm } from '@/components/symptom-form';
 import { ResultsDisplay } from '@/components/results-display';
 import { useToast } from '@/hooks/use-toast';
 import { predictStrokeType } from '@/ai/flows/predict-stroke-type';
-import { recommendNextAction } from '@/ai/flows/recommend-next-action';
 import type { SymptomFormValues, PredictionResult } from '@/types';
 
 export default function Home() {
@@ -22,32 +21,21 @@ export default function Home() {
     try {
       const predictionInput = {
         ...data,
-        bloodPressure: data.bloodPressure || undefined,
+        ctScanImage: data.ctScanImage,
+        bloodPressure: data.bloodPressure ? Number(data.bloodPressure) : undefined,
       };
       
       const prediction = await predictStrokeType(predictionInput);
 
-      if (!prediction.strokeType) {
-        throw new Error('AI failed to predict stroke type.');
-      }
-      
-      const recommendationInput = {
-        ...predictionInput,
-        strokeType: prediction.strokeType,
-        confidence: prediction.confidenceLevel,
-      };
-      
-      const recommendation = await recommendNextAction(recommendationInput);
-      
-      if (!recommendation.recommendedAction || !recommendation.justification) {
-        throw new Error('AI failed to recommend an action.');
+      if (!prediction || !prediction.strokeType) {
+        throw new Error('AI failed to return a valid diagnosis.');
       }
       
       setResult({
         strokeType: prediction.strokeType,
-        confidenceLevel: prediction.confidenceLevel,
-        recommendedAction: recommendation.recommendedAction,
-        justification: recommendation.justification,
+        confidence: prediction.confidence,
+        tpaEligible: prediction.tpaEligible,
+        action: prediction.action,
       });
 
     } catch (error) {
@@ -81,7 +69,7 @@ export default function Home() {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center gap-4 text-center">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="text-lg font-medium text-muted-foreground">Analyzing patient data...</p>
+              <p className="text-lg font-medium text-muted-foreground">Analyzing CT scan and patient data...</p>
               <p className="text-sm text-muted-foreground">Please wait while our AI processes the information.</p>
             </div>
           ) : result ? (
