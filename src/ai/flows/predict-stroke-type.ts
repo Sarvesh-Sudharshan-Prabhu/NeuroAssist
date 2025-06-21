@@ -97,9 +97,9 @@ History of diabetes: {{historyDiabetes}}
 History of smoking: {{historySmoking}}
 
 **Task & Action Formulation:**
-Based on all the information, provide a JSON response with the determined stroke type, confidence, tPA eligibility, and recommended action. Formulate the 'action' field as follows:
+Based on all the information, provide a JSON response with the determined stroke type, confidence, tPA eligibility, and recommended action. Formulate the 'action' field as a multi-line string following these specific protocols:
 
-- **If Stroke Type is Hemorrhagic:** The action must be a multi-line string containing this exact protocol:
+- **If Stroke Type is Hemorrhagic:** The action must be:
 "❌ HEMORRHAGIC STROKE DETECTED – tPA CONTRAINDICATED
 Urgent neurosurgical consultation and emergency transfer required.
 
@@ -113,11 +113,35 @@ Elevate Head: Keep patient's head elevated to 30 degrees to reduce intracranial 
 Minimize Stimulation: Reduce light, sound, and movement.
 Control Fever: Apply cool packs if the patient is feverish to reduce brain metabolism."
 
-- **If Stroke Type is Ischemic and tPA eligible:** Provide a concise action, for example: "Administer tPA under supervision per protocol. Transfer to a stroke-ready hospital immediately."
+- **If Stroke Type is Ischemic and tPA eligible:** The action must be:
+"✅ ISCHEMIC STROKE: tPA ELIGIBLE
+Initiate tPA administration immediately per protocol.
 
-- **If Stroke Type is Ischemic and NOT tPA eligible:** Provide a concise action, for example: "Patient not eligible for tPA. Provide supportive care and seek urgent neurological consultation. Monitor vitals."
+Treatment Protocol:
+Administer Alteplase (tPA): Dose at 0.9 mg/kg (max 90 mg). Give 10% as a bolus over 1 minute, then infuse the remainder over 60 minutes.
+Monitor Vitals: Check blood pressure and neurological status every 15 minutes during infusion and for 2 hours after.
+Blood Pressure Control: Maintain BP < 180/105 mmHg.
+Prepare for Transfer: Arrange for immediate transfer to a comprehensive stroke center for ongoing care and potential endovascular therapy."
 
-- **If Stroke Type is Uncertain:** Provide a cautious action, for example: "Diagnosis uncertain. Do not administer tPA. Urgent neurological consultation and further imaging (e.g., MRI) recommended. Monitor vitals closely."
+- **If Stroke Type is Ischemic and NOT tPA eligible:** The action must be:
+"⚠️ ISCHEMIC STROKE: tPA NOT ELIGIBLE
+Patient is outside the treatment window or has contraindications for tPA.
+
+Supportive Care Plan:
+Initiate Antiplatelet Therapy: Administer Aspirin (e.g., 325 mg) once hemorrhage is definitively ruled out.
+Permissive Hypertension: Do not lower blood pressure unless it is extremely high (e.g., >220/120 mmHg).
+Monitor Vitals: Closely monitor neurological status, blood pressure, and glucose.
+Neurological Consultation: Seek urgent neurological consultation and arrange transfer to a stroke-ready hospital."
+
+- **If Stroke Type is Uncertain:** The action must be:
+"❓ DIAGNOSIS UNCERTAIN – DO NOT ADMINISTER tPA
+Further investigation is required before initiating stroke-specific treatment.
+
+Immediate Actions:
+Stabilize Patient: Provide supportive care, manage airway, breathing, and circulation.
+Urgent Consultation: Seek immediate neurological consultation.
+Advanced Imaging: Arrange for urgent advanced imaging (e.g., MRI/MRA or CT angiography) to clarify diagnosis.
+Monitor Closely: Continuously monitor vital signs and neurological status for any changes."
 `,
 });
 
