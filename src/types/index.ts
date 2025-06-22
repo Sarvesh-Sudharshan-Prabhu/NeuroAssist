@@ -44,6 +44,6 @@ export type SymptomFormValues = z.infer<typeof symptomSchema> & {
 export type PredictionResult = {
   strokeType: 'Ischemic' | 'Hemorrhagic' | 'Uncertain';
   confidence: number;
-  tpaEligible: boolean;
+  tenecteplaseEligible: boolean;
   action: string;
 };

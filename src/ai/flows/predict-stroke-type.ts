@@ -44,7 +44,7 @@ const PredictStrokeTypeOutputSchema = z.object({
     .enum(['Ischemic', 'Hemorrhagic', 'Uncertain'])
     .describe('The predicted stroke type based on the CT scan and symptoms.'),
   confidence: z.number().min(0).max(1).describe('The confidence level of the prediction (0-1).'),
-  tpaEligible: z.boolean().describe('Whether the patient is eligible for tPA treatment.'),
+  tenecteplaseEligible: z.boolean().describe('Whether the patient is eligible for Tenecteplase treatment.'),
   action: z.string().describe('The recommended action and justification.'),
 });
 
@@ -59,7 +59,7 @@ const prompt = ai.definePrompt({
   input: {schema: z.any()},
   output: {schema: PredictStrokeTypeOutputSchema},
   prompt: `You are an expert emergency physician specializing in stroke diagnosis.
-Your task is to determine the stroke type, tPA eligibility, and the recommended course of action based on the provided patient data.
+Your task is to determine the stroke type, Tenecteplase eligibility, and the recommended course of action based on the provided patient data.
 
 **DIAGNOSTIC PROTOCOL: Follow these steps in order.**
 
@@ -91,11 +91,11 @@ Calculate a confidence score for your diagnosis between 0.0 and 1.0.
   - **Medium (0.6 - 0.84):** Score is between 1-2 or -1 to -2.
   - **Low (0.4 - 0.59):** Score is close to the -1 to +1 indeterminate range.
 
-**Step 3: Determine tPA Eligibility**
-A patient is **tPA eligible** ONLY IF:
+**Step 3: Determine Tenecteplase Eligibility**
+A patient is **Tenecteplase eligible** ONLY IF:
 - Stroke type is confidently identified as **Ischemic**.
 - Time since onset is **less than 270 minutes**.
-A patient is **NOT tPA eligible** under any other circumstances (Hemorrhagic, Uncertain, or Ischemic outside the window).
+A patient is **NOT Tenecteplase eligible** under any other circumstances (Hemorrhagic, Uncertain, or Ischemic outside the window).
 
 **Patient Information:**
 CT Scan: {{#if ctScanImage}}{{media url=ctScanImage}}{{else}}Not Provided{{/if}}
@@ -115,10 +115,10 @@ Headache: {{headache}}
 Diastolic Blood Pressure: {{diastolicBloodPressure}}
 
 **Task & Action Formulation:**
-Based on all the information, provide a JSON response with the determined stroke type, confidence, tPA eligibility, and recommended action. Formulate the 'action' field as a multi-line string following these specific protocols:
+Based on all the information, provide a JSON response with the determined stroke type, confidence, Tenecteplase eligibility, and recommended action. Formulate the 'action' field as a multi-line string following these specific protocols:
 
 - **If Stroke Type is Hemorrhagic:** The action must be:
-"❌ HEMORRHAGIC STROKE DETECTED – tPA CONTRAINDICATED
+"❌ HEMORRHAGIC STROKE DETECTED – TENECTEPLASE CONTRAINDICATED
 Urgent neurosurgical consultation and emergency transfer required.
 
 Immediate Actions:
@@ -131,19 +131,19 @@ Elevate Head: Keep patient's head elevated to 30 degrees to reduce intracranial 
 Minimize Stimulation: Reduce light, sound, and movement.
 Control Fever: Apply cool packs if the patient is feverish to reduce brain metabolism."
 
-- **If Stroke Type is Ischemic and tPA eligible:** The action must be:
-"✅ ISCHEMIC STROKE: tPA ELIGIBLE
-Initiate tPA administration immediately per protocol.
+- **If Stroke Type is Ischemic and Tenecteplase eligible:** The action must be:
+"✅ ISCHEMIC STROKE: TENECTEPLASE ELIGIBLE
+Initiate Tenecteplase administration immediately per protocol.
 
 Treatment Protocol:
-Administer Alteplase (tPA): Dose at 0.9 mg/kg (max 90 mg). Give 10% as a bolus over 1 minute, then infuse the remainder over 60 minutes.
-Monitor Vitals: Check blood pressure and neurological status every 15 minutes during infusion and for 2 hours after.
+Administer Tenecteplase: Dose as a single IV bolus at 0.25 mg/kg (max 25 mg).
+Monitor Vitals: Check blood pressure and neurological status every 15 minutes for 2 hours after administration.
 Blood Pressure Control: Maintain BP < 180/105 mmHg.
 Prepare for Transfer: Arrange for immediate transfer to a comprehensive stroke center for ongoing care and potential endovascular therapy."
 
-- **If Stroke Type is Ischemic and NOT tPA eligible:** The action must be:
-"⚠️ ISCHEMIC STROKE: tPA NOT ELIGIBLE
-Patient is outside the treatment window or has contraindications for tPA.
+- **If Stroke Type is Ischemic and NOT Tenecteplase eligible:** The action must be:
+"⚠️ ISCHEMIC STROKE: TENECTEPLASE NOT ELIGIBLE
+Patient is outside the treatment window or has contraindications.
 
 Supportive Care Plan:
 Initiate Antiplatelet Therapy: Administer Aspirin (e.g., 325 mg) once hemorrhage is definitively ruled out.
@@ -152,7 +152,7 @@ Monitor Vitals: Closely monitor neurological status, blood pressure, and glucose
 Neurological Consultation: Seek urgent neurological consultation and arrange transfer to a stroke-ready hospital."
 
 - **If Stroke Type is Uncertain:** The action must be:
-"❓ DIAGNOSIS UNCERTAIN – DO NOT ADMINISTER tPA
+"❓ DIAGNOSIS UNCERTAIN – DO NOT ADMINISTER TENECTEPLASE
 Further investigation is required before initiating stroke-specific treatment.
 
 Immediate Actions:

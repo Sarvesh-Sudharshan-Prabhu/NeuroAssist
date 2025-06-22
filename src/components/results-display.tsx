@@ -28,9 +28,9 @@ const ResultItem: React.FC<{ icon: React.ReactNode; label: string; value: string
   </div>
 );
 
-const TpaDosingCalculator = () => {
+const TenecteplaseDosingCalculator = () => {
   const [weight, setWeight] = useState<string>('');
-  const [doses, setDoses] = useState<{ total: number; bolus: number; infusion: number } | null>(null);
+  const [dose, setDose] = useState<number | null>(null);
   const { toast } = useToast();
 
   const handleCalculate = () => {
@@ -41,19 +41,12 @@ const TpaDosingCalculator = () => {
         title: 'Invalid Weight',
         description: 'Please enter a valid patient weight in kilograms.',
       });
-      setDoses(null);
+      setDose(null);
       return;
     }
 
-    const totalDose = Math.min(weightKg * 0.9, 90);
-    const bolusDose = totalDose * 0.1;
-    const infusionDose = totalDose * 0.9;
-
-    setDoses({
-      total: parseFloat(totalDose.toFixed(2)),
-      bolus: parseFloat(bolusDose.toFixed(2)),
-      infusion: parseFloat(infusionDose.toFixed(2)),
-    });
+    const totalDose = Math.min(weightKg * 0.25, 25);
+    setDose(parseFloat(totalDose.toFixed(2)));
   };
 
   return (
@@ -61,10 +54,10 @@ const TpaDosingCalculator = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl">
           <Calculator className="h-6 w-6 text-primary" />
-          tPA (Alteplase) Dosing Calculator
+          Tenecteplase Dosing Calculator
         </CardTitle>
         <CardDescription>
-          For Ischemic Stroke. Standard dose: 0.9 mg/kg (max 90 mg).
+          For Ischemic Stroke. Dose is a single IV bolus: 0.25 mg/kg (max 25 mg).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -82,24 +75,12 @@ const TpaDosingCalculator = () => {
           </div>
           <Button onClick={handleCalculate}>Calculate</Button>
         </div>
-        {doses && (
-          <div className="space-y-4 rounded-lg border bg-background p-4">
-            <h4 className="font-semibold text-center text-foreground">Calculated Doses (mg)</h4>
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Dose</p>
-                <p className="text-2xl font-bold text-destructive">{doses.total}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">IV Bolus (10%)</p>
-                <p className="text-2xl font-bold text-primary">{doses.bolus}</p>
-                <p className="text-xs text-muted-foreground">over 1 min</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">IV Infusion (90%)</p>
-                <p className="text-2xl font-bold text-primary">{doses.infusion}</p>
-                <p className="text-xs text-muted-foreground">over 60 min</p>
-              </div>
+        {dose !== null && (
+          <div className="space-y-2 rounded-lg border bg-background p-4">
+            <h4 className="font-semibold text-center text-foreground">Calculated Dose (mg)</h4>
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">Total IV Bolus Dose</p>
+              <p className="text-4xl font-bold text-destructive">{dose}</p>
             </div>
           </div>
         )}
@@ -118,7 +99,7 @@ export function ResultsDisplay({ result, onReset }: ResultsDisplayProps) {
     return `NeuroAssist Stroke Diagnosis Summary:\n
 - Predicted Stroke Type: ${result.strokeType}
 - Confidence: ${confidencePercent}%
-- tPA Eligible: ${result.tpaEligible ? 'Yes' : 'No'}
+- Tenecteplase Eligible: ${result.tenecteplaseEligible ? 'Yes' : 'No'}
 - Recommended Action: ${result.action}`;
   };
 
@@ -174,15 +155,15 @@ export function ResultsDisplay({ result, onReset }: ResultsDisplayProps) {
           )}>
              <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-muted-foreground">Recommended Action</p>
-                {result.tpaEligible ? (
+                {result.tenecteplaseEligible ? (
                     <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-white">
                         <CheckCircle2 className="mr-2 h-4 w-4" />
-                        tPA Eligible
+                        Tenecteplase Eligible
                     </Badge>
                 ) : (
                     <Badge variant="destructive">
                         <XCircle className="mr-2 h-4 w-4" />
-                        {isHemorrhagic ? 'tPA Contraindicated' : 'tPA Not Eligible'}
+                        {isHemorrhagic ? 'Tenecteplase Contraindicated' : 'Tenecteplase Not Eligible'}
                     </Badge>
                 )}
              </div>
@@ -206,7 +187,7 @@ export function ResultsDisplay({ result, onReset }: ResultsDisplayProps) {
             </div>
           </div>
           
-          {result.tpaEligible && <TpaDosingCalculator />}
+          {result.tenecteplaseEligible && <TenecteplaseDosingCalculator />}
 
         </CardContent>
         <CardFooter className="flex flex-col sm:flex-row gap-2">
